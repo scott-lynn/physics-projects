@@ -1,4 +1,6 @@
-!ODE v7
+! ODE v1.8
+! This program solves both the radioactive decay ODE and the SHM ODE
+! Contains Euler and Leapfrog methods
 module methods
     implicit none
     integer, parameter :: dp = selected_real_kind(15,300)
@@ -10,10 +12,6 @@ module methods
             real(kind=dp) :: rad_decay_ODE
             real(kind=dp), intent(in) :: N, t, lambda
             real(kind=dp) :: dNdt
-
-            !Testing input values
-            !print *, 'lambda:', lambda
-            !print *, 'N input=', N
 
             !Calculate the differential
             dNdt = (-lambda*N)
@@ -86,9 +84,6 @@ module methods
             !Calculate value of function at the next step
             y_next = y + f(y,t,c)*dt
 
-            !Test output
-            !print *, 'y_next=', y_next
-
             !Return this
             euler_method = y_next
 
@@ -105,7 +100,6 @@ module methods
             real(kind=dp) :: t, y_next, c
             real(kind=dp) :: f !input function f(y,t,c)
 
-
             !Determine if constant is required
             if(present(c_in)) then
                 c = c_in
@@ -116,12 +110,8 @@ module methods
             !Calculate value of function at next step
             y_next = y_prev +2*f(y,t,c)*dt
 
-            !Testing
-            !print *, 'y_next=', y_next
-
             !Return value
             leapfrog = y_next
-
 
         end function leapfrog
 end module methods
@@ -130,23 +120,22 @@ program ode
     use methods
     implicit none
 
-
     !I/O
     integer :: ios, out_a, out_b
     real(kind=dp) :: start, finish
 
     !Declare Variables
-    real(kind=dp) :: test, temp
+    real(kind=dp) :: temp
     real(kind=dp) :: dt, t, t_max, t0, diff
 
     !Variables for Radioactive Decay equation
     real(kind=dp) :: N, N_true, N0, N_prev, lambda
 
     !Variabes for SHM equation
-    real(kind=dp), parameter :: pi = 4.D0*DATAN(1.D0) !Standard Fortran implementation of pi
+    real(kind=dp), parameter :: pi = 4.D0*DATAN(1.D0)
     real(kind=dp) :: omega !Angular frequency
     real(kind=dp) :: v0 !Initial velocity: dy/dt at t=0
-    real(kind=dp) :: z, z_prev, z_next, z_temp, z0
+    real(kind=dp) :: z, z_prev, z_temp, z0
     real(kind=dp) :: y, y_prev, y0, y_true, y_temp
 
     !-----------------------------------------------------------------------------
@@ -182,23 +171,12 @@ program ode
     !--------------------------------------------------------------------------------
     !Radioactive Decay ODE with Euler Method
 
-    !Open file to write euler results to
-
+    !Open file to write euler results
     open(unit=out_a, file='rd_euler_true.dat', iostat=ios)
     if(ios.ne.0) stop 'Error in opening file rd_euler_true.dat'
 
     open(unit=out_b, file='rd_euler_approx.dat', iostat=ios)
     if(ios.ne.0) stop 'Error in opening file rd_euler_approx.dat'
-
-    !print *, 'N_initial=', N
-    !Test analytical value of rad_decay
-    !N_true = rad_decay(N,t_max,lambda)
-    !print *, 'Analytical solution for N:', N_true
-
-    !Test rad_decay_ODE
-    !test = rad_decay_ODE(N,t,lambda)
-    !print *, 'dN/dt at t=0', test
-
 
     !Start recording computational time
     call cpu_time(start)
@@ -211,11 +189,6 @@ program ode
 
         !Approximate solution with Euler method
         N = euler_method(dt,rad_decay_ODE,N,t,lambda)
-
-        !Testing
-        !print *, 't=', t
-        !print *, 'N(t)=', N
-        !print *, 'N-true(t)=', N_true
 
         !Write output to file
         write(unit=out_a, fmt=*, iostat=ios) t, N_true
@@ -242,6 +215,7 @@ program ode
     diff = abs(N_true - N)
 
     !Print output
+    print *, '--------------------------------------------------'
     print *, 'Radioactive Decay ODE with Euler Method:'
     print '("Computation time:",f6.3," seconds.")',finish-start
     print *, 'Evaluated at time t=', t_max
@@ -249,7 +223,7 @@ program ode
     print *, 'N_approx(t):', N
     print *, 'N_true(t):', N_true
     print *, 'Difference in solutions:', diff
-    print *, ''
+    print *, '--------------------------------------------------'
 
     !Write out dt against computational time
     open(unit=out_a, file='rd_euler_comptime_v_dt.dat', position='append', iostat=ios)
@@ -302,12 +276,6 @@ program ode
         !Pass held value to update N_prev
         N_prev = temp
 
-        !Testing
-        !print *, 't=', t
-        !print *, 'N_prev(t)=', N_prev
-        !print *, 'N(t)=', N
-        !print *, 'N-true(t)=', N_true
-
         !Write output to file
         write(unit=out_a, fmt=*, iostat=ios) t, N_true
         if(ios.ne.0) stop 'Error writing to file rd_leapfrog_true.dat'
@@ -333,6 +301,7 @@ program ode
     diff = abs(N_true - N)
 
     !Print output
+    print *, '--------------------------------------------------'
     print *, 'Radioactive Decay ODE with Leapfrog Method:'
     print '("Computation time:",f6.3," seconds.")',finish-start
     print *, 'Evaluated at time t=', t_max
@@ -340,7 +309,7 @@ program ode
     print *, 'N_approx(t):', N
     print *, 'N_true(t):', N_true
     print *, 'Difference in solutions:', diff
-    print *, ''
+    print *, '--------------------------------------------------'
 
     !Write out dt against computational time
     open(unit=out_a, file='rd_leapfrog_comptime_v_dt.dat', position='append', iostat=ios)
@@ -382,9 +351,6 @@ program ode
         !Calculate analytical solution
         y_true = SHM(y0,t,v0,omega)
 
-        !Testing
-        !print *, 'y_true(t)=', y_true
-
         !Hold this value for use in calculating yn+1
         z_temp = z
 
@@ -392,9 +358,6 @@ program ode
         z = z + SHM_ODE(y,t,omega)*dt    !zn+1
         y = y + z_temp*dt               !yn+1
 
-        !Testing
-        !print *, 'z(t)=', z
-        !print *, 'y(t)=', y
 
         !Write output to file
         write(unit=out_a, fmt=*, iostat=ios) t, y_true
@@ -420,6 +383,7 @@ program ode
     diff = abs(y_true - y)
 
     !Print output
+    print *, '--------------------------------------------------'
     print *, 'SHM SODE with Euler Method:'
     print '("Computation time:",f6.3," seconds.")',finish-start
     print *, 'Evaluated at time t=', t_max
@@ -427,7 +391,7 @@ program ode
     print *, 'y_approx(t):', y
     print *, 'y_true(t):', y_true
     print *, 'Difference in solutions:', diff
-    print *, ''
+    print *, '--------------------------------------------------'
 
     !Write out dt against computational time
     open(unit=out_a, file='shm_euler_comptime_v_dt.dat', position='append', iostat=ios)
@@ -477,9 +441,6 @@ program ode
         !Calculate analytical solution
         y_true = SHM(y0,t,v0,omega)
 
-        !Testing
-        !print *, 'y_true(t)=', y_true
-
         !Hold this value
         z_temp = z !zn
         y_temp = y !yn
@@ -487,10 +448,6 @@ program ode
         !Calculate next steps using the Leapfrog method
         z = z_prev + 2*SHM_ODE(y,t,omega)*dt    !zn+1
         y = y_prev + 2*z_temp*dt               !yn+1
-
-        !Testing
-        !print *, 'z(t)=', z
-        !print *, 'y(t)=', y
 
         !n becomes n-1
         z_prev = z_temp
@@ -521,6 +478,7 @@ program ode
     diff = abs(y_true - y)
 
     !Print output
+    print *, '--------------------------------------------------'
     print *, 'SHM SODE with Leapfrog Method:'
     print '("Computation time:",f6.3," seconds.")',finish-start
     print *, 'Evaluated at time t=', t_max
@@ -528,7 +486,7 @@ program ode
     print *, 'y_approx(t):', y
     print *, 'y_true(t):', y_true
     print *, 'Difference in solutions:', diff
-    print *, ''
+    print *, '--------------------------------------------------'
 
     !Write out dt against computational time
     open(unit=out_a, file='shm_leapfrog_comptime_v_dt.dat', position='append', iostat=ios)
@@ -545,7 +503,5 @@ program ode
     if(ios.ne.0) stop 'Error opening file shm_leapfrog_dt_v_diff.dat.dat'
     close(unit=out_b, iostat=ios)
     if(ios.ne.0) stop 'Error closing file shm_leapfrog_dt_v_diff.dat.dat'
-
-    print *, 'Program end'
 
 end program
