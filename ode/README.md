@@ -12,7 +12,7 @@ Numerical methods:
 
 ## Features 
 * **Modular:** All numerical methods and physics functions are organised inside the `methods` module.
-* **Double Precision:** Accurate up to 15 decimal places.
+* **Double Precision:** Offers up to 15 decimal places of accuracy.
 * **Data Output:** Generates easy to plot .dat files for both the true (analytical) and approximated (numerical) solutions.
 * **Performance Logging:** Appends the time step `dt`, final error and computation time to log files, allowing for convergence and performance analysis. 
 

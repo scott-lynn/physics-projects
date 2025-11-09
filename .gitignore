@@ -1,0 +1,7 @@
+# Compiled executables
+*.o
+*.mod
+ode_solver
+
+# Data output files
+*.dat
